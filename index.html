@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Dispatch FG Store</title>
+
+<style>
+
+/* ================= BODY ================= */
+body{
+margin:0;
+font-family:'Segoe UI',sans-serif;
+background:linear-gradient(135deg,#667eea,#764ba2);
+min-height:100vh;
+}
+
+/* ================= LOGIN ================= */
+
+.login-wrapper{
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.login-card{
+width:380px;
+padding:45px;
+border-radius:20px;
+background:rgba(255,255,255,0.12);
+backdrop-filter:blur(20px);
+box-shadow:0 25px 45px rgba(0,0,0,0.35);
+text-align:center;
+color:white;
+animation:fadeIn 0.6s ease;
+}
+
+.logo{
+font-size:42px;
+margin-bottom:10px;
+}
+
+.subtitle{
+font-size:14px;
+opacity:0.8;
+margin-bottom:30px;
+}
+
+.input-group{
+margin-bottom:20px;
+}
+
+.input-group input{
+width:100%;
+padding:14px;
+border:none;
+border-radius:10px;
+font-size:16px; /* Login text bada kiya */
+outline:none;
+background:rgba(255,255,255,0.9);
+}
+
+.input-group input:focus{
+box-shadow:0 0 0 2px #00c6ff;
+}
+
+.login-btn{
+width:100%;
+padding:14px;
+border:none;
+border-radius:10px;
+background:linear-gradient(90deg,#00c6ff,#0072ff);
+color:white;
+font-weight:bold;
+cursor:pointer;
+transition:0.3s;
+}
+
+.login-btn:hover{
+transform:translateY(-2px);
+box-shadow:0 10px 20px rgba(0,0,0,0.3);
+}
+
+#loginMsg{
+margin-top:15px;
+color:#ffdede;
+font-size:14px;
+}
+
+/* ================= DISPATCH ================= */
+
+.container{
+width:1200px; /* Width thodi badhayi hai bade text ke liye */
+margin:20px auto;
+background:white;
+border-radius:10px;
+padding-bottom:20px;
+display:none;
+box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.header{
+background:#c69c6d;
+text-align:center;
+padding:15px;
+font-weight:bold;
+font-size:26px; /* Title bada kiya */
+color:black;
+border-radius: 10px 10px 0 0;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+border:1px solid black;
+padding:12px 8px; /* Padding badhayi hai */
+text-align:center;
+font-size: 19px; /* Table text bada kiya */
+}
+
+th{
+background:#e8e1d5;
+font-weight: bold;
+}
+
+input,select{
+width:95%;
+border:none;
+text-align:center;
+background:transparent;
+font-size: 19px; /* Input text bada kiya */
+font-family: inherit;
+outline: none;
+}
+
+/* --- Columns Width Formatting --- */
+.narrow-col {
+  width: 100px; /* Thoda aur space diya */
+}
+
+.narrow-col input {
+  width: 100%;
+  border-bottom: 1px solid #ddd;
+  font-weight: bold;
+}
+
+.total, .stock, .sr {
+  font-weight: bold;
+  color: #333;
+}
+
+.add-btn,.submit-btn,.print-btn{
+padding:12px 30px;
+border:none;
+cursor:pointer;
+font-weight:bold;
+border-radius:6px;
+margin:10px;
+font-size: 18px; /* Button text bada kiya */
+}
+
+.add-btn{background:#c69c6d;}
+.submit-btn{background:#28a745;color:white;}
+.print-btn{background:#007bff;color:white;}
+
+.delete-btn{
+background:#d9534f;
+color:white;
+border:none;
+padding:8px 15px;
+cursor:pointer;
+border-radius:4px;
+font-weight: bold;
+font-size: 16px;
+}
+
+.action-buttons{
+text-align:center;
+margin-top:20px;
+}
+
+@keyframes fadeIn{
+from{opacity:0;transform:translateY(-15px);}
+to{opacity:1;transform:translateY(0);}
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="loginDiv" class="login-wrapper">
+<div class="login-card">
+<div class="logo">🔐</div>
+<h2>Dispatch Login</h2>
+<p class="subtitle">FG Store Management</p>
+
+<div class="input-group">
+<input type="text" id="username" placeholder="Username">
+</div>
+
+<div class="input-group">
+<input type="password" id="password" placeholder="Password">
+</div>
+
+<button class="login-btn" onclick="login()">Login</button>
+<p id="loginMsg"></p>
+</div>
+</div>
+
+<div class="container" id="dispatchForm">
+
+<div class="header">DISPATCH (FG STORE)</div>
+
+<table>
+<tr>
+<td style="font-size: 22px; padding: 15px;"><b>Slip:</b> <span id="slip">FG01</span></td>
+<td style="font-size: 22px; padding: 15px;"><b>Date:</b> <span id="date_header"></span></td>
+</tr>
+</table>
+
+<table>
+<thead>
+<tr>
+<th style="width:60px;">SR</th>
+<th>MODEL</th>
+<th class="narrow-col">Std Box</th>
+<th class="narrow-col">No Box</th>
+<th>Total Qty</th>
+<th>Stock</th>
+<th>Remark</th>
+<th style="width:90px;">Action</th>
+</tr>
+</thead>
+<tbody id="data-body"></tbody>
+</table>
+
+<button class="add-btn" onclick="addRow()">+ Add Model</button>
+
+<div class="action-buttons">
+<button class="submit-btn" onclick="submitForm()">Submit</button>
+<button class="print-btn" onclick="window.print()">Print</button>
+</div>
+
+</div>
+
+<script>
+
+const webAppUrl="https://script.google.com/macros/s/AKfycbzQnWxKZyzpAX0eEcYYoUO3DpA7YhylE5oAgv61WGbwWFiTztCuS1JlXzfmgDm0vG0uUw/exec";
+let masterData=[];
+let userRole="";
+
+/* LOGIN */
+function login(){
+let user=document.getElementById("username").value.trim();
+let pass=document.getElementById("password").value.trim();
+
+fetch(webAppUrl+"?action=login&user="+encodeURIComponent(user)+"&pass="+encodeURIComponent(pass))
+.then(res=>res.json())
+.then(data=>{
+if(data.status==="success"){
+userRole=data.role;
+document.getElementById("loginDiv").style.display="none";
+document.getElementById("dispatchForm").style.display="block";
+document.body.style.background="#f4f4f4";
+init();
+}else{
+document.getElementById("loginMsg").innerText="Invalid Login!";
+}
+})
+.catch(()=>alert("Login Error"));
+}
+
+/* INIT */
+function init(){
+document.getElementById("date_header").innerText=new Date().toLocaleDateString("en-GB");
+
+fetch(webAppUrl)
+.then(res=>res.json())
+.then(data=>{
+masterData=data.items||[];
+document.getElementById("slip").innerText=data.nextSlip||"FG01";
+
+let tbody=document.getElementById("data-body");
+tbody.innerHTML="";
+
+for(let i=0;i<5;i++) addRow();
+});
+}
+
+/* ADD ROW */
+function addRow(){
+let tbody=document.getElementById("data-body");
+let tr=document.createElement("tr");
+
+tr.innerHTML=`
+<td class="sr"></td>
+<td><select onchange="updateRow(this)" class="model"><option value="">Select</option></select></td>
+<td class="narrow-col"><input type="number" class="std" value="0" oninput="calc(this)"></td>
+<td class="narrow-col"><input type="number" class="box" value="0" oninput="calc(this)"></td>
+<td class="total">0</td>
+<td class="stock">0</td>
+<td><input type="text" class="remark"></td>
+<td><button class="delete-btn" onclick="delRow(this)">X</button></td>
+`;
+
+tbody.appendChild(tr);
+
+let select=tr.querySelector(".model");
+masterData.forEach(item=>{
+let opt=document.createElement("option");
+opt.value=item.model;
+opt.textContent=item.model;
+select.appendChild(opt);
+});
+
+updateSR();
+}
+
+function updateRow(sel){
+let row=sel.closest("tr");
+let item=masterData.find(x=>x.model===sel.value);
+
+if(item){
+row.querySelector(".std").value=item.standardBox;
+row.querySelector(".stock").innerText=item.stock;
+}else{
+row.querySelector(".std").value=0;
+row.querySelector(".stock").innerText=0;
+}
+calc(row.querySelector(".std"));
+}
+
+function calc(el){
+let row=el.closest("tr");
+let std=parseFloat(row.querySelector(".std").value)||0;
+let box=parseFloat(row.querySelector(".box").value)||0;
+let total=std*box;
+let stock=parseFloat(row.querySelector(".stock").innerText)||0;
+
+if(total>stock){
+alert("Dispatch Qty > Stock!");
+row.querySelector(".box").value=0;
+total=0;
+}
+row.querySelector(".total").innerText=total;
+}
+
+function delRow(btn){
+btn.closest("tr").remove();
+updateSR();
+}
+
+function updateSR(){
+document.querySelectorAll("#data-body tr").forEach((row,i)=>{
+row.querySelector(".sr").innerText=i+1;
+});
+}
+
+function submitForm(){
+if(userRole!=="admin"){
+alert("Only Admin Allowed!");
+return;
+}
+
+let rows=[];
+document.querySelectorAll("#data-body tr").forEach(row=>{
+let model=row.querySelector(".model").value;
+let std=parseFloat(row.querySelector(".std").value)||0;
+let box=parseFloat(row.querySelector(".box").value)||0;
+let total=std*box;
+let remark=row.querySelector(".remark").value;
+
+if(model && total>0){
+rows.push({model,stdBox:std,numBox:box,totalQty:total,remark});
+}
+});
+
+if(rows.length===0){
+alert("No Data To Submit");
+return;
+}
+
+fetch(webAppUrl,{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({
+date:new Date().toLocaleDateString("en-GB"),
+slip_num:document.getElementById("slip").innerText,
+rows:rows
+})
+})
+.then(res=>res.json())
+.then(data=>{
+if(data.status==="success"){
+alert("Saved! Slip: "+data.slip);
+init();
+}else{
+alert("Error: "+data.message);
+}
+})
+.catch(()=>alert("Submit Failed"));
+}
+
+</script>
+
+</body>
+</html>
